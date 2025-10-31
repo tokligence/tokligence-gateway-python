@@ -52,6 +52,8 @@ jobs:
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "actions@github.com"
+        # Set remote URL with PAT token
+        git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
 
     - name: Bump version
       id: bump
@@ -73,8 +75,8 @@ jobs:
       run: |
         VERSION=${{ steps.bump.outputs.new_version }}
         git tag -a "v$VERSION" -m "Release version $VERSION"
-        git push origin main
-        git push origin "v$VERSION"
+        git push
+        git push --tags
 
     - name: Create Release
       if: github.event.inputs.create_release == 'true'

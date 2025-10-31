@@ -1,7 +1,9 @@
 # Tokligence - Multi-platform LLM Gateway
 
-[![Python Version](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python)](https://www.python.org/)
+[![CI Status](https://github.com/tokligence/tokligence-gateway-python/actions/workflows/ci.yml/badge.svg)](https://github.com/tokligence/tokligence-gateway-python/actions/workflows/ci.yml)
 [![PyPI Version](https://img.shields.io/pypi/v/tokligence)](https://pypi.org/project/tokligence/)
+[![Python Version](https://img.shields.io/pypi/pyversions/tokligence)](https://pypi.org/project/tokligence/)
+[![Downloads](https://img.shields.io/pypi/dm/tokligence)](https://pypi.org/project/tokligence/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 > **[Tokligence Gateway](https://github.com/tokligence/tokligence-gateway)** - A multi-platform LLM gateway with unified OpenAI-compatible API.

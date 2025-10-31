@@ -1,0 +1,122 @@
+[build-system]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tokligence"
+version = "0.2.0"
+description = "Tokligence Gateway - Multi-platform LLM gateway with unified OpenAI-compatible API"
+authors = [
+    {name = "Tokligence Team", email = "cs@tokligence.ai"}
+]
+keywords = ["llm", "gateway", "openai", "anthropic", "ai", "proxy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "click>=8.0",
+    "requests>=2.25",
+    "pyyaml>=5.4",
+    "rich>=10.0",
+]
+dynamic = ["readme"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=3.0",
+    "black>=22.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "build>=0.10",
+    "twine>=4.0",
+]
+
+[project.urls]
+Homepage = "https://tokligence.ai"
+Documentation = "https://github.com/tokligence/tokligence-gateway"
+Repository = "https://github.com/tokligence/tokligence-gateway-python"
+Issues = "https://github.com/tokligence/tokligence-gateway/issues"
+"Main Project" = "https://github.com/tokligence/tokligence-gateway"
+
+[project.scripts]
+tokligence = "tokligence.cli:main"
+tokligence-daemon = "tokligence.daemon:main"
+tokligenced = "tokligence.daemon:main"
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+text = """
+
+## Installation
+
+Install via pip:
+```bash
+pip install tokligence
+```
+
+Or via uv:
+```bash
+uv add tokligence
+```
+
+This package includes pre-compiled binaries for Linux, macOS, and Windows.
+"""
+
+[tool.hatch.build]
+include = [
+    "tokligence/",
+    "README.md",
+    "LICENSE",
+]
+exclude = [
+    "*.pyc",
+    "__pycache__/",
+    ".git/",
+    ".pytest_cache/",
+    "dist/",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tokligence"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = [
+    "--cov=tokligence",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "-v",
+]

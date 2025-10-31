@@ -25,6 +25,11 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
 jobs:
   bump-version:
     name: Bump Version

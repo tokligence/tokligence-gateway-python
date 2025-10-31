@@ -1,0 +1,185 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.2.1)'
+        required: true
+        type: string
+      test_pypi:
+        description: 'Publish to TestPyPI first'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build-binaries:
+    name: Build Go Binaries
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Python wrapper
+      uses: actions/checkout@v4
+      with:
+        path: python-wrapper
+
+    - name: Checkout Gateway
+      uses: actions/checkout@v4
+      with:
+        repository: tokligence/tokligence-gateway
+        path: tokligence-gateway
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build binaries
+      working-directory: tokligence-gateway
+      run: |
+        make clean-dist
+        make dist-go
+
+    - name: Copy binaries to Python package
+      run: |
+        mkdir -p python-wrapper/tokligence/binaries
+        cp tokligence-gateway/dist/gateway-*-linux-amd64 python-wrapper/tokligence/binaries/gateway-linux-amd64
+        cp tokligence-gateway/dist/gateway-*-linux-arm64 python-wrapper/tokligence/binaries/gateway-linux-arm64
+        cp tokligence-gateway/dist/gateway-*-darwin-amd64 python-wrapper/tokligence/binaries/gateway-darwin-amd64
+        cp tokligence-gateway/dist/gateway-*-darwin-arm64 python-wrapper/tokligence/binaries/gateway-darwin-arm64
+        cp tokligence-gateway/dist/gateway-*-windows-amd64.exe python-wrapper/tokligence/binaries/gateway-windows-amd64.exe
+
+        cp tokligence-gateway/dist/gatewayd-*-linux-amd64 python-wrapper/tokligence/binaries/gatewayd-linux-amd64
+        cp tokligence-gateway/dist/gatewayd-*-linux-arm64 python-wrapper/tokligence/binaries/gatewayd-linux-arm64
+        cp tokligence-gateway/dist/gatewayd-*-darwin-amd64 python-wrapper/tokligence/binaries/gatewayd-darwin-amd64
+        cp tokligence-gateway/dist/gatewayd-*-darwin-arm64 python-wrapper/tokligence/binaries/gatewayd-darwin-arm64
+        cp tokligence-gateway/dist/gatewayd-*-windows-amd64.exe python-wrapper/tokligence/binaries/gatewayd-windows-amd64.exe
+
+        chmod +x python-wrapper/tokligence/binaries/*
+        ls -la python-wrapper/tokligence/binaries/
+
+    - name: Upload binaries artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries
+        path: python-wrapper/tokligence/binaries/
+        retention-days: 7
+
+  publish:
+    name: Build and Publish Python Package
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download binaries
+      uses: actions/download-artifact@v4
+      with:
+        name: binaries
+        path: tokligence/binaries/
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Update version if manual trigger
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        VERSION=${{ github.event.inputs.version }}
+        # Update version in pyproject.toml
+        sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+        # Update version in __init__.py
+        sed -i "s/__version__ = .*/__version__ = \"$VERSION\"/" tokligence/__init__.py
+        echo "Updated version to $VERSION"
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Check package
+      run: twine check dist/*
+
+    - name: Publish to TestPyPI
+      if: github.event.inputs.test_pypi == 'true' || github.event_name == 'workflow_dispatch'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      run: |
+        python -m twine upload --repository testpypi dist/* || true
+        echo "Package published to TestPyPI"
+        echo "Test with: pip install -i https://test.pypi.org/simple/ tokligence"
+
+    - name: Publish to PyPI (using trusted publishing)
+      if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verify-metadata: true
+        skip-existing: true
+
+    - name: Publish to PyPI (manual trigger with token)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_pypi != 'true'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        python -m twine upload dist/*
+        echo "Package published to PyPI"
+
+  create-release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create Release Notes
+      id: release_notes
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+        cat > release_notes.md << EOF
+        ## Tokligence Python Wrapper v$VERSION
+
+        ### Installation
+        \`\`\`bash
+        pip install tokligence==$VERSION
+        \`\`\`
+
+        ### What's New
+        - See [CHANGELOG.md](https://github.com/tokligence/tokligence-gateway-python/blob/main/CHANGELOG.md)
+
+        ### Links
+        - [PyPI Package](https://pypi.org/project/tokligence/$VERSION/)
+        - [Documentation](https://github.com/tokligence/tokligence-gateway)
+        EOF
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: v${{ steps.release_notes.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false

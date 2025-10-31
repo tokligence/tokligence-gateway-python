@@ -7,11 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2024-11-01
+
 ### Added
 - GitHub Actions workflows for CI/CD
-- Automated publishing to PyPI
-- Version management scripts
-- Contributing guidelines
+  - Automated testing across Python 3.8-3.12
+  - Cross-platform testing (Linux, macOS, Windows)
+  - Automated PyPI publishing
+- Version management automation
+  - `bump_version.py` script for version updates
+  - GitHub Actions version workflow
+- Contributing guidelines (CONTRIBUTING.md)
+- GitHub Actions setup documentation
+- CI status badges in README
+
+### Improved
+- Better error handling in CLI commands
+- More robust binary detection across platforms
+- Documentation updates with workflow instructions
+
+### Fixed
+- GitHub Actions permissions for tag pushing
+- CI workflow dependency installation
 
 ## [0.2.0] - 2024-11-01
 
@@ -39,5 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macOS (Intel, Apple Silicon)
 - Windows (amd64)
 
-[Unreleased]: https://github.com/tokligence/tokligence-gateway-python/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/tokligence/tokligence-gateway-python/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/tokligence/tokligence-gateway-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/tokligence/tokligence-gateway-python/releases/tag/v0.2.0

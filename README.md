@@ -10,6 +10,26 @@
 
 This package provides a convenient Python interface to the Tokligence Gateway, bundling pre-compiled Go binaries for easy installation via pip or uv.
 
+## 🚀 Quick Start
+
+```bash
+# Install
+pip install tokligence
+
+# Initialize and start
+tokligence init
+tokligence-daemon start --background
+
+# Your gateway is now running at http://localhost:8081
+```
+
+Now use it with any OpenAI-compatible client:
+```python
+import openai
+openai.api_base = "http://localhost:8081/v1"
+# Use your favorite LLM through the gateway!
+```
+
 ## Features
 
 - 🚀 **Zero Dependencies on Go** - Pre-compiled binaries included

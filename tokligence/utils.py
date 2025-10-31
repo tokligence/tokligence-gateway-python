@@ -69,7 +69,9 @@ def get_binary_path(binary_name: str) -> Path:
         raise FileNotFoundError(
             f"Binary not found: {binary_path}\n"
             f"Platform: {os_name}/{arch}\n"
-            f"This platform might not be supported."
+            f"This platform might not be supported.\n"
+            f"Please ensure the package was installed correctly or try reinstalling:\n"
+            f"  pip install --force-reinstall tokligence"
         )
 
     # Ensure binary is executable (Unix-like systems)

@@ -1,0 +1,86 @@
+name: Version Management (Simple)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions Bot"
+        git config user.email "actions@github.com"
+
+    - name: Bump version
+      id: bump
+      run: |
+        VERSION="${{ github.event.inputs.version_type }}"
+        echo "Bumping version: $VERSION"
+
+        # Install Python package in editable mode to get scripts
+        pip install -e .
+
+        # Run version bump script
+        python scripts/bump_version.py $VERSION --commit
+
+        # Get the new version
+        NEW_VERSION=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'version = \"(.*?)\"', content).group(1))")
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+
+    - name: Push changes and tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION=${{ steps.bump.outputs.new_version }}
+
+        # Create tag
+        git tag -a "v$VERSION" -m "Release version $VERSION"
+
+        # Push changes and tag
+        if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+          echo "Using PAT_TOKEN for push"
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git main
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git "v$VERSION"
+        else
+          echo "Using GITHUB_TOKEN for push"
+          git push origin main
+          git push origin "v$VERSION"
+        fi
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        tag_name: v${{ steps.bump.outputs.new_version }}
+        name: Release v${{ steps.bump.outputs.new_version }}
+        generate_release_notes: true
+        draft: false
+        prerelease: false

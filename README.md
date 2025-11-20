@@ -157,6 +157,8 @@ The assistant can:
 - Google Gemini API (set `TOKLIGENCE_GOOGLE_API_KEY`)
 - Local LLMs via Ollama, vLLM, or LM Studio (no API key needed)
 
+![TGW Chat Assistant](data/chat_py.png)
+
 ## Python API
 
 ### Basic Usage

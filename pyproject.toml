@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokligence"
-version = "0.2.0"
-description = "Tokligence Gateway - Multi-platform LLM gateway with unified OpenAI-compatible API"
+version = "0.3.4"
+description = "Tokligence Gateway - Multi-platform LLM gateway with unified OpenAI, Anthropic, and Google Gemini APIs"
 authors = [
     {name = "Tokligence Team", email = "cs@tokligence.ai"}
 ]
@@ -37,11 +37,19 @@ dynamic = ["readme"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=3.0",
+    "pytest-asyncio>=0.21.0",
     "black>=22.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
     "build>=0.10",
     "twine>=4.0",
+]
+
+chat = [
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+    "google-generativeai>=0.4.0",
+    "httpx>=0.24.0",
 ]
 
 [project.urls]
@@ -53,6 +61,7 @@ Issues = "https://github.com/tokligence/tokligence-gateway/issues"
 
 [project.scripts]
 tokligence = "tokligence.cli:main"
+tgw = "tokligence.cli:main"
 tokligence-daemon = "tokligence.daemon:main"
 tokligenced = "tokligence.daemon:main"
 

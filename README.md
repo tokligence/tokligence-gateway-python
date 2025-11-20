@@ -6,9 +6,11 @@
 [![Downloads](https://img.shields.io/pypi/dm/tokligence)](https://pypi.org/project/tokligence/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-> **[Tokligence Gateway](https://github.com/tokligence/tokligence-gateway)** - A multi-platform LLM gateway with unified OpenAI-compatible API.
+> **[Tokligence Gateway](https://github.com/tokligence/tokligence-gateway)** - A multi-platform LLM gateway with unified OpenAI, Anthropic, and Google Gemini APIs.
 
 This package provides a convenient Python interface to the Tokligence Gateway, bundling pre-compiled Go binaries for easy installation via pip or uv.
+
+**New in v0.3.4:** AI-powered configuration assistant via `tgw chat` command!
 
 ## 🚀 Quick Start
 
@@ -32,11 +34,21 @@ openai.api_base = "http://localhost:8081/v1"
 
 ## Features
 
+### Installation & Deployment
 - 🚀 **Zero Dependencies on Go** - Pre-compiled binaries included
 - 🌍 **Cross-Platform** - Works on Linux, macOS, and Windows
 - 🔧 **Simple CLI** - Intuitive command-line interface
 - 🐍 **Pythonic API** - Native Python wrappers for gateway operations
 - 📦 **Easy Installation** - Just `pip install tokligence`
+
+### Gateway Capabilities (v0.3.4)
+- 🔄 **Multi-Provider Support** - OpenAI, Anthropic, and Google Gemini
+- 🌐 **Dual Protocol Support** - OpenAI and Anthropic native APIs simultaneously
+- 🛠️ **Advanced Tool Calling** - Full function calling with automatic translation
+- 🎯 **Intelligent Routing** - Auto, passthrough, or translation work modes
+- 📊 **Production Features** - Prometheus metrics, rate limiting, health checks
+- 🗄️ **Database Support** - SQLite and PostgreSQL with connection pooling
+- ⚡ **High Performance** - 9.6x faster than LiteLLM with sub-100ms latency
 
 ## Installation
 
@@ -115,6 +127,35 @@ response = openai.ChatCompletion.create(
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
+
+## 🤖 AI Configuration Assistant (New!)
+
+Get AI-powered help with configuration and troubleshooting:
+
+```bash
+# Install with chat support
+pip install "tokligence[chat]"
+
+# Start the AI assistant
+tgw chat
+
+# Or specify a model
+tgw chat --model gpt-4
+tgw chat --model claude-sonnet-4.5
+```
+
+The assistant can:
+- ✨ Answer questions about configuration
+- 🛠️ Execute configuration commands
+- 📚 Search official documentation
+- 🔍 Troubleshoot issues
+- 🔐 Safely handle sensitive data (masks API keys automatically)
+
+**Supported LLM Providers:**
+- OpenAI API (set `TOKLIGENCE_OPENAI_API_KEY`)
+- Anthropic API (set `TOKLIGENCE_ANTHROPIC_API_KEY`)
+- Google Gemini API (set `TOKLIGENCE_GOOGLE_API_KEY`)
+- Local LLMs via Ollama, vLLM, or LM Studio (no API key needed)
 
 ## Python API
 

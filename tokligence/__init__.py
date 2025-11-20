@@ -4,7 +4,7 @@ Tokligence - Multi-platform LLM gateway with unified OpenAI-compatible API
 Python wrapper for the Tokligence Gateway.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.4"
 __author__ = "Tokligence Team"
 __email__ = "cs@tokligence.ai"
 

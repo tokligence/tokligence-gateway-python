@@ -24,6 +24,10 @@ def cli(ctx, config):
     """Tokligence Gateway - Multi-platform LLM gateway CLI"""
     ctx.ensure_object(dict)
     ctx.obj['config_path'] = config
+    # Detect if called as 'tgw' or 'tokligence'
+    import sys
+    import os
+    ctx.obj['program_name'] = os.path.basename(sys.argv[0]) if sys.argv else 'tokligence'
 
 
 @cli.group()
@@ -216,7 +220,41 @@ def usage(ctx, user, as_json):
 def version(ctx):
     """Show version information"""
     from . import __version__
-    console.print(f"Tokgateway version: {__version__}")
+    console.print(f"Tokligence Gateway version: {__version__}")
+
+
+@cli.command()
+@click.option('--model', help='Preferred LLM model to use (e.g., gpt-4, claude-sonnet-4.5)')
+@click.pass_context
+def chat(ctx, model):
+    """Interactive AI assistant for Tokligence Gateway configuration and help
+
+    The chat assistant helps you configure and troubleshoot Tokligence Gateway
+    using an interactive AI-powered conversation. It can:
+
+    - Answer questions about configuration
+    - Help set up providers (OpenAI, Anthropic, Google)
+    - Troubleshoot issues
+    - Execute configuration commands
+    - Search and reference official documentation
+
+    The assistant requires a local or remote LLM endpoint (OpenAI API, Anthropic API,
+    Gemini API, or local LLMs via Ollama/vLLM/LM Studio).
+    """
+    try:
+        # Import chat module (will create it next)
+        from .chat import start_chat
+        start_chat(model=model)
+    except ImportError:
+        console.print(Panel(
+            "❌ Chat feature requires additional dependencies.\n"
+            "Install with: pip install tokligence[chat]",
+            style="red"
+        ))
+        sys.exit(1)
+    except Exception as e:
+        console.print(Panel(f"❌ Error starting chat: {e}", style="red"))
+        sys.exit(1)
 
 
 def main():

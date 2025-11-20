@@ -23,54 +23,59 @@ env:
 
 jobs:
   build-binaries:
-    name: Build Go Binaries
+    name: Download Go Binaries from Release
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Python wrapper
-      uses: actions/checkout@v4
-      with:
-        path: python-wrapper
-
-    - name: Checkout Gateway
-      uses: actions/checkout@v4
-      with:
-        repository: tokligence/tokligence-gateway
-        path: tokligence-gateway
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-
-    - name: Build binaries
-      working-directory: tokligence-gateway
+    - name: Get version from tag
+      id: get_version
       run: |
-        make clean-dist
-        make dist-go
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION=v${{ github.event.inputs.version }}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "No version tag found"
+          exit 1
+        fi
+        echo "Using version: $VERSION"
 
-    - name: Copy binaries to Python package
+    - name: Download binaries from Gateway release
       run: |
-        mkdir -p python-wrapper/tokligence/binaries
-        cp tokligence-gateway/dist/gateway-*-linux-amd64 python-wrapper/tokligence/binaries/gateway-linux-amd64
-        cp tokligence-gateway/dist/gateway-*-linux-arm64 python-wrapper/tokligence/binaries/gateway-linux-arm64
-        cp tokligence-gateway/dist/gateway-*-darwin-amd64 python-wrapper/tokligence/binaries/gateway-darwin-amd64
-        cp tokligence-gateway/dist/gateway-*-darwin-arm64 python-wrapper/tokligence/binaries/gateway-darwin-arm64
-        cp tokligence-gateway/dist/gateway-*-windows-amd64.exe python-wrapper/tokligence/binaries/gateway-windows-amd64.exe
+        VERSION=${{ steps.get_version.outputs.VERSION }}
+        mkdir -p binaries
+        cd binaries
 
-        cp tokligence-gateway/dist/gatewayd-*-linux-amd64 python-wrapper/tokligence/binaries/gatewayd-linux-amd64
-        cp tokligence-gateway/dist/gatewayd-*-linux-arm64 python-wrapper/tokligence/binaries/gatewayd-linux-arm64
-        cp tokligence-gateway/dist/gatewayd-*-darwin-amd64 python-wrapper/tokligence/binaries/gatewayd-darwin-amd64
-        cp tokligence-gateway/dist/gatewayd-*-darwin-arm64 python-wrapper/tokligence/binaries/gatewayd-darwin-arm64
-        cp tokligence-gateway/dist/gatewayd-*-windows-amd64.exe python-wrapper/tokligence/binaries/gatewayd-windows-amd64.exe
+        # Download all binaries from the Gateway release
+        gh release download $VERSION \
+          --repo tokligence/tokligence-gateway \
+          --pattern 'gateway-*' \
+          --pattern 'gatewayd-*'
 
-        chmod +x python-wrapper/tokligence/binaries/*
-        ls -la python-wrapper/tokligence/binaries/
+        # Rename to expected format (remove version from filename)
+        mv gateway-${VERSION}-linux-amd64 gateway-linux-amd64
+        mv gateway-${VERSION}-linux-arm64 gateway-linux-arm64
+        mv gateway-${VERSION}-darwin-amd64 gateway-darwin-amd64
+        mv gateway-${VERSION}-darwin-arm64 gateway-darwin-arm64
+        mv gateway-${VERSION}-windows-amd64.exe gateway-windows-amd64.exe
+
+        mv gatewayd-${VERSION}-linux-amd64 gatewayd-linux-amd64
+        mv gatewayd-${VERSION}-linux-arm64 gatewayd-linux-arm64
+        mv gatewayd-${VERSION}-darwin-amd64 gatewayd-darwin-amd64
+        mv gatewayd-${VERSION}-darwin-arm64 gatewayd-darwin-arm64
+        mv gatewayd-${VERSION}-windows-amd64.exe gatewayd-windows-amd64.exe
+
+        chmod +x gateway-* gatewayd-*
+        ls -la
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload binaries artifact
       uses: actions/upload-artifact@v4
       with:
         name: binaries
-        path: python-wrapper/tokligence/binaries/
+        path: binaries/
         retention-days: 7
 
   publish:

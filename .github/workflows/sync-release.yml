@@ -1,0 +1,178 @@
+name: Sync with Gateway Release
+
+on:
+  schedule:
+    # Check for new releases every 3 hours
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Gateway version to sync (e.g., 0.3.4)'
+        required: false
+
+jobs:
+  check-and-sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to push commits and tags
+      id-token: write  # Needed for PyPI trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for new Gateway release
+        id: check
+        run: |
+          # Get latest release from main repo
+          LATEST_RELEASE=$(gh api repos/tokligence/tokligence-gateway/releases/latest --jq '.tag_name' || echo "")
+
+          # Get current version from pyproject.toml
+          CURRENT_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+
+          echo "Latest Gateway release: $LATEST_RELEASE"
+          echo "Current Python package version: $CURRENT_VERSION"
+
+          # Compare versions (remove 'v' prefix from release tag)
+          LATEST_VERSION=${LATEST_RELEASE#v}
+
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "New version available: $LATEST_VERSION"
+            echo "new_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+            echo "has_update=true" >> $GITHUB_OUTPUT
+
+            # Check if this version's binaries exist in Gateway releases
+            ASSETS_COUNT=$(gh api repos/tokligence/tokligence-gateway/releases/tags/$LATEST_RELEASE \
+              --jq '.assets | length' || echo "0")
+
+            if [ "$ASSETS_COUNT" -gt 0 ]; then
+              echo "Found $ASSETS_COUNT assets in release $LATEST_RELEASE"
+            else
+              echo "Warning: No assets found in release $LATEST_RELEASE"
+              echo "has_update=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No update needed - already at version $CURRENT_VERSION"
+            echo "has_update=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update version in package files
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.new_version }}"
+
+          # Update pyproject.toml
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+
+          # Update __init__.py
+          sed -i "s/__version__ = .*/__version__ = \"$VERSION\"/" tokligence/__init__.py
+
+          echo "Updated version to $VERSION in pyproject.toml and __init__.py"
+
+      - name: Clone Gateway repository for doc sync
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          # Clone the Gateway repository to sync documentation
+          git clone --depth 1 --branch v${{ steps.check.outputs.new_version }} \
+            https://github.com/tokligence/tokligence-gateway.git \
+            ../tokligence-gateway
+
+      - name: Sync documentation from Gateway repo
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          # Run doc sync script
+          python scripts/sync_docs.py
+
+          # Stage documentation changes
+          git add tokligence/knowledge/
+
+      - name: Update CHANGELOG
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.new_version }}"
+          DATE=$(date +%Y-%m-%d)
+
+          # Create new changelog entry
+          cat > /tmp/new_changelog.md << EOF
+          ## [$VERSION] - $DATE
+
+          ### Changed
+          - Synced with tokligence-gateway v$VERSION
+          - Updated embedded documentation
+          - Updated bundled binaries to v$VERSION
+
+          EOF
+
+          # Insert new entry after "## [Unreleased]" line
+          sed -i "/## \[Unreleased\]/r /tmp/new_changelog.md" CHANGELOG.md
+
+          git add CHANGELOG.md
+          echo "Updated CHANGELOG.md"
+
+      - name: Install dependencies and run tests
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          pip install -e ".[chat]"
+          pip install pytest pytest-asyncio
+          pytest tests/ -v
+
+      - name: Commit version changes
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          VERSION="${{ steps.check.outputs.new_version }}"
+
+          git add pyproject.toml tokligence/__init__.py
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: sync with gateway release v$VERSION" \
+              -m "- Updated package version to $VERSION" \
+              -m "- Synced documentation from gateway repo" \
+              -m "- Updated CHANGELOG" \
+              -m "" \
+              -m "🤖 Automated sync by GitHub Actions"
+            git push
+          fi
+
+      - name: Create and push tag
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.new_version }}"
+
+          # Create annotated tag
+          git tag -a "v$VERSION" -m "Release v$VERSION - Synced with Gateway
+
+          Automated release synced from tokligence-gateway v$VERSION
+
+          - Updated bundled binaries to v$VERSION
+          - Synced documentation
+          - Updated CHANGELOG
+
+          See https://github.com/tokligence/tokligence-gateway/releases/tag/v$VERSION for gateway changes."
+
+          # Push tag (this will trigger the publish.yml workflow)
+          git push origin "v$VERSION"
+
+          echo "Created and pushed tag v$VERSION"
+          echo "This will trigger the publish workflow automatically"
+
+      - name: Wait for publish workflow
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          echo "Waiting 10 seconds for publish workflow to start..."
+          sleep 10
+
+          VERSION="${{ steps.check.outputs.new_version }}"
+          echo "Tag v$VERSION pushed - publish workflow should be triggered"
+          echo "Check workflow status at: https://github.com/${{ github.repository }}/actions"

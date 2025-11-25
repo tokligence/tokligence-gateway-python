@@ -14,31 +14,35 @@
 
 **New in v0.3.4:** AI-powered configuration assistant via `tgw chat` command!
 
-## 🌐 Vision: Two-Way Token Trading
+## 🌐 Vision
 
-**We're not building just another LLM gateway. We're building the first open-source AI gateway that enables two-way token trading.**
+**Three pillars for the AI-native era:**
 
-### Why This Matters
+### 🛡️ The Trusted Partner for Coding Agents
 
-AI is becoming as essential as water and electricity. However, LLM token supply should not be concentrated in the hands of a few tech giants. With Tokligence:
+Your AI agents handle sensitive code, secrets, and business data. Tokligence protects them:
 
-- 🔌 **AI should be infrastructure** - Open and transparent, not controlled by a few platforms
-- 🔄 **Every consumer can be a provider** - Your excess LLM token capacity can serve others, like Bitcoin mining democratized finance
-- 🌍 **The future is distributed** - Build a global decentralized token marketplace
+- **PII Prompt Firewall** - Real-time detection and redaction of sensitive data across 100+ languages
+- **API Key Protection** - Detects 30+ provider keys (OpenAI, AWS, GitHub, Stripe, etc.) before they leak to LLM providers
+- **Multiple Modes** - Monitor, enforce, or redact based on your compliance needs
+- **Seamless Integration** - Works with Codex CLI, Claude Code, and any OpenAI/Anthropic-compatible agent
 
-### The Game-Changing Difference
+### 🧽 The "Sponge" for SME AI Token Capacity
 
-```
-Traditional Gateways:  User → Gateway → Provider                       (one-way consumption)
-Tokligence Gateway:    User (with GPU & self-hosted LLM) ↔ Gateway ↔ Token Marketplace (buy AND sell tokens)
-```
+Think of Tokligence as a buffer for your AI throughput - smoothing capacity like a sponge absorbs water:
 
-With Tokligence, every installation becomes a node in a global AI token network. You can:
-- **Buy** tokens to meet AI needs
-- **Sell** unused LLM token throughput to the token marketplace
-- **Arbitrage** between different prices and availability
+- **Peak Hours** - Buy tokens from the marketplace when internal LLM capacity is maxed out
+- **Off-Peak** - Sell your unused LLM throughput to earn revenue
+- **Elastic Scaling** - No need to over-provision; scale with actual demand
 
-**Think of it as Airbnb for AI tokens.**
+### 🔧 Next-Gen AI Token Pipeline Infrastructure
+
+Not just another gateway - the foundation for AI token economics:
+
+- **Unified Access** - OpenAI, Anthropic, Gemini with bidirectional protocol translation
+- **Token Ledger** - Built-in accounting and audit trail for every token consumed or sold
+- **Open Source** - Apache 2.0, self-hosted, no vendor lock-in
+- **High Performance** - 9.6x faster than LiteLLM with 75% less infrastructure
 
 ---
 
@@ -122,6 +126,16 @@ See [tokligence-gateway benchmarks](https://github.com/tokligence/tokligence-gat
 
 ### Core Capabilities
 
+- 🛡️ **PII Prompt Firewall** - Real-time detection and redaction of sensitive data
+  - Detects PII across **100+ languages** (3-5ms latency, CPU-only)
+  - **API Key Detection** for 30+ providers (OpenAI, AWS, GitHub, Stripe, etc.)
+  - Three modes: Monitor, Enforce, or Redact based on compliance needs
+  - Built-in regex filters + optional Presidio sidecar for NLP-based detection
+
+![PII Prompt Firewall - Redact Mode](https://raw.githubusercontent.com/tokligence/tokligence-gateway-python/main/data/firewall_compressed.png)
+
+*PII Prompt Firewall in Redact Mode — automatically detects and masks sensitive information before sending to LLM providers.*
+
 - 🔄 **Dual Native Protocol Support** - Both OpenAI and Anthropic APIs running simultaneously
   - OpenAI-compatible: `/v1/chat/completions`, `/v1/responses`
   - Anthropic-native: `/anthropic/v1/messages`
@@ -179,6 +193,7 @@ Every token logged, every request tracked, every cost verified. Full audit trail
 
 | Feature | Tokligence Gateway | LiteLLM | OpenRouter | AWS Bedrock |
 |--------|--------------------|---------|-----------|-----------------------|
+| **PII Prompt Firewall** | ✅ 100+ languages, API key detection | ❌ | ❌ | ❌ |
 | **Protocols** | Bidirectional OpenAI ↔ Anthropic<br/>with dual native APIs | OpenAI-style<br/>routed to many providers | OpenAI-style<br/>managed gateway | AWS Converse API<br/>for Bedrock models |
 | **Routing** | Model-first auto mode<br/>with intelligent selection | Flexible routing<br/>(cost, latency, weight) | Managed routing<br/>and fallbacks | Regional routing<br/>integrated with AWS |
 | **Performance** | **9.6x faster** than LiteLLM<br/>Go binary, low overhead | Python service<br/>with runtime overhead | Extra network hop<br/>variable latency | Optimized for<br/>AWS regions |

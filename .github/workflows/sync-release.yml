@@ -120,7 +120,7 @@ jobs:
         if: steps.check.outputs.has_update == 'true'
         run: |
           pip install -e ".[chat]"
-          pip install pytest pytest-asyncio
+          pip install pytest pytest-asyncio pytest-cov
           pytest tests/ -v
 
       - name: Commit version changes

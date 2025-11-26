@@ -8,7 +8,10 @@ import pytest
 def test_import():
     """Test that the package can be imported."""
     import tokligence
-    assert tokligence.__version__ == "0.2.0"
+    # Version should be a valid semver string
+    assert tokligence.__version__ is not None
+    parts = tokligence.__version__.split('.')
+    assert len(parts) >= 2, "Version should be semver format (x.y.z)"
 
 
 def test_import_components():

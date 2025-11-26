@@ -233,8 +233,23 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         Tool execution result
     """
     platform_info = get_platform_info()
-    gateway = Gateway()
-    daemon = Daemon()
+
+    # Lazy initialization of gateway and daemon - only when needed
+    # This allows tools like search_docs and get_doc to work without gateway binary
+    gateway = None
+    daemon = None
+
+    def get_gateway():
+        nonlocal gateway
+        if gateway is None:
+            gateway = Gateway()
+        return gateway
+
+    def get_daemon():
+        nonlocal daemon
+        if daemon is None:
+            daemon = Daemon()
+        return daemon
 
     try:
         if tool_name == 'set_config':
@@ -301,7 +316,7 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
                 }
 
         elif tool_name == 'get_status':
-            status = daemon.status()
+            status = get_daemon().status()
             is_running = status.get('status') == 'running'
             pid = status.get('pid')
 
@@ -317,7 +332,7 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             daemon_mode = args.get('daemon', True)
 
             # Check if already running
-            status = daemon.status()
+            status = get_daemon().status()
             if status.get('status') == 'running':
                 return {
                     'success': False,
@@ -326,14 +341,14 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
                 }
 
             # Start daemon
-            daemon.start(background=daemon_mode)
+            get_daemon().start(background=daemon_mode)
 
             # Wait a bit for startup
             import asyncio
             await asyncio.sleep(2)
 
             # Verify it started
-            status = daemon.status()
+            status = get_daemon().status()
             is_running = status.get('status') == 'running'
             pid = status.get('pid')
 
@@ -358,7 +373,7 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
         elif tool_name == 'stop_gateway':
             # Check if running
-            status = daemon.status()
+            status = get_daemon().status()
             if status.get('status') != 'running':
                 return {
                     'success': False,
@@ -367,14 +382,14 @@ async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
                 }
 
             # Stop daemon
-            daemon.stop()
+            get_daemon().stop()
 
             # Wait a bit for shutdown
             import asyncio
             await asyncio.sleep(1)
 
             # Verify it stopped
-            status = daemon.status()
+            status = get_daemon().status()
             is_running = status.get('status') == 'running'
 
             return {

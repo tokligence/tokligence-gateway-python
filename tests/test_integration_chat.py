@@ -46,13 +46,15 @@ def test_tgw_chat_help():
 
 def test_tgw_version():
     """Test that tgw version shows correct version"""
+    import tokligence
     result = subprocess.run(
         ['tgw', 'version'],
         capture_output=True,
         text=True
     )
     assert result.returncode == 0
-    assert '0.3.4' in result.stdout
+    # Check that version output contains the package version
+    assert tokligence.__version__ in result.stdout
 
 
 @pytest.mark.skipif(

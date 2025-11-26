@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokligence"
-version = "0.3.4"
+version = "0.4.0"
 description = "Tokligence Gateway - Multi-platform LLM gateway with unified OpenAI, Anthropic, and Google Gemini APIs"
 authors = [
     {name = "Tokligence Team", email = "cs@tokligence.ai"}
